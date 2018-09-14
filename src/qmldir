@@ -1,2 +1,4 @@
 module QFlow.Websockets
 plugin websockets
+classname Websockets
+typeinfo plugins.qmltypes

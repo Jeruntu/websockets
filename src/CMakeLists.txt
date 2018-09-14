@@ -54,5 +54,13 @@ add_dependencies(websockets core)
 target_include_directories (websockets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${WEBSOCKETPP_INCLUDE_DIRS})
 target_link_libraries(websockets core Qt5::Core Qt5::Qml Qt5::Network ${WEBSOCKETPP_LIBRARIES})
 set(WEBSOCKETS_INSTALL_PATH "plugins/QFlow/Websockets" CACHE PATH "qFlow Websockets Library Install Path")
-install (TARGETS websockets DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
-install (FILES qmldir DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
+
+if(WIN32)
+    install(TARGETS websockets
+        RUNTIME DESTINATION ${WEBSOCKETS_INSTALL_PATH}
+        ARCHIVE DESTINATION lib
+        COMPONENT qflow)
+elseif()
+    install(TARGETS websockets DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
+endif()
+install (FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
