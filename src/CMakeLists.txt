@@ -11,12 +11,10 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 
-add_library(websockets SHARED ${DATABASE_SRCS} qmldir)
+add_library(websockets SHARED ${DATABASE_SRCS})
 
 find_package(websocketpp QUIET)
-if(websocketpp_FOUND)
-    get_target_property(WEBSOCKETPP_INCLUDE_DIRS websocketpp::websocketpp INTERFACE_INCLUDE_DIRECTORIES)
-else()
+if(NOT websocketpp_FOUND)
     ExternalProject_Add(
       websocketpp
       GIT_REPOSITORY "https://github.com/zaphoyd/websocketpp.git"
@@ -33,6 +31,8 @@ else()
         set(WEBSOCKETPP_LIBRARIES ${WEBSOCKETPP_LIBRARIES} ws2_32)
     endif()
     add_dependencies(websockets websocketpp)
+    target_include_directories(websockets PUBLIC ${WEBSOCKETPP_INCLUDE_DIRS})
+    target_link_libraries(websockets ${WEBSOCKETPP_LIBRARIES})
 endif()
 
 if(DEFINED QTDIR${_lib_suffix})
@@ -45,14 +45,20 @@ elseif(DEFINED ENV{QTDIR})
 	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
 endif()
 
-
 set(QT_MIN_VERSION "5.6.0")
 find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED Core Qml Network)
 add_definitions(${WEBSOCKETPP_DEFINITIONS})
 set_property(TARGET websockets PROPERTY CXX_STANDARD 14)
 add_dependencies(websockets core)
-target_include_directories (websockets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${WEBSOCKETPP_INCLUDE_DIRS})
-target_link_libraries(websockets core Qt5::Core Qt5::Qml Qt5::Network ${WEBSOCKETPP_LIBRARIES})
+target_include_directories(websockets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(websockets
+    core
+    Qt5::Core
+    Qt5::Qml
+    Qt5::Network
+    $<$<BOOL:${websocketpp_FOUND}>:websocketpp::websocketpp>
+    $<$<BOOL:${WIN32}>:ws2_32>
+    )
 set(WEBSOCKETS_INSTALL_PATH "plugins/QFlow/Websockets" CACHE PATH "qFlow Websockets Library Install Path")
 
 if(WIN32)
@@ -63,4 +69,4 @@ if(WIN32)
 elseif()
     install(TARGETS websockets DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
 endif()
-install (FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
+install(FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
