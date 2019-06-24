@@ -8,21 +8,26 @@ find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED
     Qml
     Network
     )
+if(TARGET core)
+    add_library(QFlow::core ALIAS core)
+else()
+    find_package(QFlowCore REQUIRED)
+endif()
 find_package(websocketpp REQUIRED)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 
-file(GLOB_RECURSE DATABASE_SRCS
+file(GLOB_RECURSE CORE_SOURCES
     RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/*.h
     )
-add_library(websockets SHARED ${DATABASE_SRCS})
+add_library(websockets SHARED ${CORE_SOURCES})
 target_compile_definitions(websockets PUBLIC WEBSOCKETS_LIBRARY)
 set_target_properties(websockets PROPERTIES CXX_STANDARD 14)
 target_link_libraries(websockets
-    core
+    QFlow::core
     Qt5::Core
     Qt5::Qml
     Qt5::Network
@@ -50,5 +55,8 @@ install(TARGETS websockets
     ARCHIVE DESTINATION lib
     COMPONENT qflow
     )
-install(EXPORT ${PACKAGE_NAME}Config DESTINATION lib/cmake/${PACKAGE_NAME})
+install(EXPORT ${PACKAGE_NAME}Config
+    NAMESPACE QFlow::
+    DESTINATION lib/cmake/${PACKAGE_NAME}
+    )
 install(FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
