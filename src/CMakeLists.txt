@@ -30,7 +30,7 @@ target_link_libraries(websockets
     $<$<BOOL:${WIN32}>:ws2_32>
     )
 
-set(WEBSOCKETS_INSTALL_PATH "plugins/QFlow/Websockets" CACHE PATH "qFlow Websockets Library Install Path")
+set(WEBSOCKETS_INSTALL_PATH "modules/QFlow/Websockets" CACHE PATH "qFlow Websockets Library Install Path")
 
 define_property(TARGET PROPERTY QMLModulePath
     BRIEF_DOCS "Path to the module"
@@ -43,11 +43,12 @@ set_target_properties(websockets PROPERTIES
     EXPORT_PROPERTIES "QMLModulePath"
     )
 
+set(PACKAGE_NAME "QFlowWebsockets")
 install(TARGETS websockets
-    EXPORT websocketsConfig
+    EXPORT ${PACKAGE_NAME}Config
     RUNTIME DESTINATION ${WEBSOCKETS_INSTALL_PATH}
     ARCHIVE DESTINATION lib
     COMPONENT qflow
     )
-install(EXPORT websocketsConfig DESTINATION lib/cmake)
+install(EXPORT ${PACKAGE_NAME}Config DESTINATION lib/cmake/${PACKAGE_NAME})
 install(FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
