@@ -42,7 +42,7 @@ define_property(TARGET PROPERTY QMLModulePath
     FULL_DOCS "Path to the module"
     )
 set_target_properties(websockets PROPERTIES
-    QMLModulePath ${CMAKE_INSTALL_PREFIX}/plugins
+    QMLModulePath ${CMAKE_INSTALL_PREFIX}/modules
     )
 set_target_properties(websockets PROPERTIES
     EXPORT_PROPERTIES "QMLModulePath"
