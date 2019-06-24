@@ -1,72 +1,53 @@
 cmake_minimum_required(VERSION 2.8.11)
-include(ExternalProject)
+
 project(websockets)
-add_definitions(-DWEBSOCKETS_LIBRARY)
-file(GLOB_RECURSE DATABASE_SRCS
-         RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-         ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
-         ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-# Find includes in corresponding build directories
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-# Instruct CMake to run moc automatically when needed.
-set(CMAKE_AUTOMOC ON)
-
-add_library(websockets SHARED ${DATABASE_SRCS})
-
-find_package(websocketpp QUIET)
-if(NOT websocketpp_FOUND)
-    ExternalProject_Add(
-      websocketpp
-      GIT_REPOSITORY "https://github.com/zaphoyd/websocketpp.git"
-      GIT_TAG "master"
-      PREFIX websocketpp
-      UPDATE_COMMAND ""
-      PATCH_COMMAND ""
-      CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=install
-      TEST_COMMAND ""
-    )
-    set(WEBSOCKETPP_INCLUDE_DIRS ${PROJECT_BINARY_DIR}/websocketpp/src/websocketpp-build/install/include ${PROJECT_BINARY_DIR}/websocketpp/src/websocketpp/install/include)
-    message(STATUS "Websocketpp: " ${WEBSOCKETPP_INCLUDE_DIRS})
-    if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        set(WEBSOCKETPP_LIBRARIES ${WEBSOCKETPP_LIBRARIES} ws2_32)
-    endif()
-    add_dependencies(websockets websocketpp)
-    target_include_directories(websockets PUBLIC ${WEBSOCKETPP_INCLUDE_DIRS})
-    target_link_libraries(websockets ${WEBSOCKETPP_LIBRARIES})
-endif()
-
-if(DEFINED QTDIR${_lib_suffix})
-	list(APPEND CMAKE_PREFIX_PATH "${QTDIR${_lib_suffix}}")
-elseif(DEFINED QTDIR)
-	list(APPEND CMAKE_PREFIX_PATH "${QTDIR}")
-elseif(DEFINED ENV{QTDIR${_lib_suffix}})
-	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR${_lib_suffix}}")
-elseif(DEFINED ENV{QTDIR})
-	list(APPEND CMAKE_PREFIX_PATH "$ENV{QTDIR}")
-endif()
 
 set(QT_MIN_VERSION "5.6.0")
-find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED Core Qml Network)
-add_definitions(${WEBSOCKETPP_DEFINITIONS})
-set_property(TARGET websockets PROPERTY CXX_STANDARD 14)
-add_dependencies(websockets core)
-target_include_directories(websockets PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+find_package(Qt5 ${QT_MIN_VERSION} CONFIG REQUIRED
+    Core
+    Qml
+    Network
+    )
+find_package(websocketpp REQUIRED)
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
+
+file(GLOB_RECURSE DATABASE_SRCS
+    RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/*.h
+    )
+add_library(websockets SHARED ${DATABASE_SRCS})
+target_compile_definitions(websockets PUBLIC WEBSOCKETS_LIBRARY)
+set_target_properties(websockets PROPERTIES CXX_STANDARD 14)
 target_link_libraries(websockets
     core
     Qt5::Core
     Qt5::Qml
     Qt5::Network
-    $<$<BOOL:${websocketpp_FOUND}>:websocketpp::websocketpp>
+    websocketpp::websocketpp
     $<$<BOOL:${WIN32}>:ws2_32>
     )
+
 set(WEBSOCKETS_INSTALL_PATH "plugins/QFlow/Websockets" CACHE PATH "qFlow Websockets Library Install Path")
 
-if(WIN32)
-    install(TARGETS websockets
-        RUNTIME DESTINATION ${WEBSOCKETS_INSTALL_PATH}
-        ARCHIVE DESTINATION lib
-        COMPONENT qflow)
-elseif()
-    install(TARGETS websockets DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
-endif()
+define_property(TARGET PROPERTY QMLModulePath
+    BRIEF_DOCS "Path to the module"
+    FULL_DOCS "Path to the module"
+    )
+set_target_properties(websockets PROPERTIES
+    QMLModulePath ${CMAKE_INSTALL_PREFIX}/plugins
+    )
+set_target_properties(websockets PROPERTIES
+    EXPORT_PROPERTIES "QMLModulePath"
+    )
+
+install(TARGETS websockets
+    EXPORT websocketsConfig
+    RUNTIME DESTINATION ${WEBSOCKETS_INSTALL_PATH}
+    ARCHIVE DESTINATION lib
+    COMPONENT qflow
+    )
+install(EXPORT websocketsConfig DESTINATION lib/cmake)
 install(FILES qmldir plugins.qmltypes DESTINATION ${WEBSOCKETS_INSTALL_PATH} COMPONENT qflow)
