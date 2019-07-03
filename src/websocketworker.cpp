@@ -47,7 +47,6 @@ void WebSocketWorker::close()
     ConnectionState expState = ConnectionState::OPENED;
     if(_state.compare_exchange_strong(expState, ConnectionState::CLOSED))
     {
-        disconnectSocketSignals();
         _con->close(websocketpp::close::status::normal, "Web socket disposed by application");
         _con = nullptr;
         _socket->deleteLater();
@@ -69,18 +68,16 @@ void WebSocketWorker::connectHandlers()
 }
 void WebSocketWorker::connectSocketSignals()
 {
-    QObject::connect(_socket, SIGNAL(connected()), this, SLOT(clientConnected()));
-    QObject::connect(_socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-    QObject::connect(_socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-    QObject::connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));
+    QObject::connect(_socket, &QTcpSocket::connected,
+                     this, &WebSocketWorker::clientConnected);
+    QObject::connect(_socket, &QTcpSocket::readyRead,
+                     this, &WebSocketWorker::readyRead);
+    QObject::connect(_socket, &QTcpSocket::disconnected,
+                     this, &WebSocketWorker::disconnected);
+    QObject::connect(_socket, SIGNAL(error(QAbstractSocket::SocketError)),
+                     this, SLOT(error(QAbstractSocket::SocketError)));
 }
-void WebSocketWorker::disconnectSocketSignals()
-{
-    QObject::disconnect(_socket, SIGNAL(connected()), this, SLOT(clientConnected()));
-    QObject::disconnect(_socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
-    QObject::disconnect(_socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-    QObject::disconnect(_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));
-}
+
 void setKeepAlive(int socketHandle)
 {
 #ifdef Q_OS_WIN
@@ -172,8 +169,7 @@ void WebSocketWorker::clientConnected()
     WebsocketppClient* client = (WebsocketppClient*)_endpoint.data();
     _con = client->get_connection(uri, ec);
     connectHandlers();
-    for(QString subprotocol: _requestedSubprotocols)
-    {
+    for (auto &subprotocol : qAsConst(_requestedSubprotocols)) {
         _con->add_subprotocol(subprotocol.toStdString());
     }
 
@@ -186,8 +182,8 @@ QAbstractSocket::SocketState WebSocketWorker::state() const
 
 void WebSocketWorker::error(QAbstractSocket::SocketError socketError)
 {
-    qDebug() << "remote closed code:" << _con->get_remote_close_code();
-    qDebug() << "local closed code:" << _con->get_local_close_code();
+    qDebug() << "remote close code:" << _con->get_remote_close_code();
+    qDebug() << "local close code:" << _con->get_local_close_code();
 
     qDebug() << socketError;
     ConnectionState expState = ConnectionState::OPENED;
@@ -203,9 +199,9 @@ void WebSocketWorker::disconnected()
 }
 void WebSocketWorker::on_message(websocketpp::connection_hdl /*hdl*/, message_ptr msg)
 {
-   std::string s = msg->get_payload();
-   QByteArray result(s.data(), s.length());
-   Q_EMIT messageReceived(result);
+    auto &s = msg->get_payload();
+    QByteArray result(s.data(), s.length());
+    Q_EMIT messageReceived(result);
 }
 
 void WebSocketWorker::on_close(websocketpp::connection_hdl hdl)
@@ -220,6 +216,7 @@ void WebSocketWorker::on_close(websocketpp::connection_hdl hdl)
 
 void WebSocketWorker::on_fail(websocketpp::connection_hdl /*hdl*/)
 {
+    qDebug() << "websocket fail";
     ConnectionState opened = ConnectionState::VALIDATING;
     if(_state.compare_exchange_strong(opened, ConnectionState::CLOSED)) Q_EMIT closed();
 }
