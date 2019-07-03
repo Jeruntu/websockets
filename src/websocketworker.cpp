@@ -14,8 +14,8 @@
 #endif
 
 #ifdef Q_OS_WIN
-#include <Winsock2.h>
-#include <ws2tcpip.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #include "mstcpip.h"
 #endif
 
@@ -65,7 +65,7 @@ void WebSocketWorker::connectHandlers()
     _con->set_validate_handler(bind(&WebSocketWorker::on_validate,this,::_1));
     _con->set_close_handler(bind(&WebSocketWorker::on_close,this,::_1));
     _con->set_open_handler(bind(&WebSocketWorker::on_open,this,::_1));
-     _con->set_fail_handler(bind(&WebSocketWorker::on_fail,this,::_1));
+    _con->set_fail_handler(bind(&WebSocketWorker::on_fail,this,::_1));
 }
 void WebSocketWorker::connectSocketSignals()
 {
@@ -186,6 +186,9 @@ QAbstractSocket::SocketState WebSocketWorker::state() const
 
 void WebSocketWorker::error(QAbstractSocket::SocketError socketError)
 {
+    qDebug() << "remote closed code:" << _con->get_remote_close_code();
+    qDebug() << "local closed code:" << _con->get_local_close_code();
+
     qDebug() << socketError;
     ConnectionState expState = ConnectionState::OPENED;
     if(_state.compare_exchange_strong(expState, ConnectionState::CLOSED)) Q_EMIT closed();
@@ -204,11 +207,17 @@ void WebSocketWorker::on_message(websocketpp::connection_hdl /*hdl*/, message_pt
    QByteArray result(s.data(), s.length());
    Q_EMIT messageReceived(result);
 }
-void WebSocketWorker::on_close(websocketpp::connection_hdl /*hdl*/)
+
+void WebSocketWorker::on_close(websocketpp::connection_hdl hdl)
 {
+    auto con = _endpoint->get_con_from_hdl(hdl);
+    qDebug() << "remote close code:" << con->get_remote_close_code();
+    qDebug() << "local close code:" << con->get_local_close_code();
+
     ConnectionState opened = ConnectionState::OPENED;
     if(_state.compare_exchange_strong(opened, ConnectionState::CLOSED)) Q_EMIT closed();
 }
+
 void WebSocketWorker::on_fail(websocketpp::connection_hdl /*hdl*/)
 {
     ConnectionState opened = ConnectionState::VALIDATING;
