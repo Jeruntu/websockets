@@ -50,7 +50,6 @@ void WebSocketWorker::close()
         _con->close(websocketpp::close::status::normal, "Web socket disposed by application");
         _con = nullptr;
         _socket->deleteLater();
-        _socket = nullptr;
         _endpoint.reset(new WebsocketppClient());
         _endpoint->clear_access_channels(websocketpp::log::alevel::all);
         Q_EMIT closed();
@@ -119,6 +118,7 @@ void setKeepAlive(int socketHandle)
 
 void WebSocketWorker::handleConnection(qintptr socketDescriptor)
 {
+    delete _socket;
     _socket = new QTcpSocket(this);
     _socket->setSocketDescriptor(socketDescriptor);
     connectSocketSignals();
@@ -147,6 +147,7 @@ websocketpp::lib::error_code WebSocketWorker::write(websocketpp::connection_hdl,
 }
 void WebSocketWorker::connect()
 {
+    delete _socket;
     _socket = new QTcpSocket(this);
     QUrl url(_uri);
     connectSocketSignals();
