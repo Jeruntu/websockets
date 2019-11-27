@@ -41,11 +41,16 @@ define_property(TARGET PROPERTY QMLModulePath
     BRIEF_DOCS "Path to the module"
     FULL_DOCS "Path to the module"
     )
-set_target_properties(websockets PROPERTIES
-    QMLModulePath ${CMAKE_INSTALL_PREFIX}/modules
+define_property(TARGET PROPERTY QMLModuleName
+    BRIEF_DOCS "Name of the module"
+    FULL_DOCS "Name of the module"
     )
 set_target_properties(websockets PROPERTIES
-    EXPORT_PROPERTIES "QMLModulePath"
+    QMLModulePath ${CMAKE_INSTALL_PREFIX}/modules
+    QMLModuleName QFlow.Websockets
+    )
+set_target_properties(websockets PROPERTIES
+    EXPORT_PROPERTIES "QMLModulePath;QMLModuleName"
     )
 
 set(PACKAGE_NAME "QFlowWebsockets")
