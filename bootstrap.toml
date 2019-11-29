@@ -1,0 +1,2 @@
+[dependencies]
+"https://github.com/zaphoyd/websocketpp.git" = "0.8.1"
