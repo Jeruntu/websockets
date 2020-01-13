@@ -1,2 +1,2 @@
 [dependencies]
-"https://github.com/zaphoyd/websocketpp.git" = "0.8.1"
+"https://github.com/zaphoyd/websocketpp.git" = { ref = "0.8.1", no-debug = true }
