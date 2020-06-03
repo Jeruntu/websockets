@@ -22,9 +22,9 @@ WebSocketConnection::WebSocketConnection(QObject* parent) : QThread(parent), _wo
 }
 WebSocketConnection::~WebSocketConnection()
 {
+    QMetaObject::invokeMethod(_worker, "deleteLater", Qt::QueuedConnection);
     exit();
     wait();
-    delete _worker;
 }
 void WebSocketConnection::close()
 {
