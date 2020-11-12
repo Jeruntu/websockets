@@ -47,7 +47,10 @@ void WebSocketWorker::close()
     ConnectionState expState = ConnectionState::OPENED;
     if(_state.compare_exchange_strong(expState, ConnectionState::CLOSED))
     {
-        _con->close(websocketpp::close::status::normal, "Web socket disposed by application");
+        if (_con)
+        {
+            _con->close(websocketpp::close::status::normal, "Web socket disposed by application");
+        }
         _con = nullptr;
         _socket->deleteLater();
         _endpoint.reset(new WebsocketppClient());
@@ -183,8 +186,11 @@ QAbstractSocket::SocketState WebSocketWorker::state() const
 
 void WebSocketWorker::error(QAbstractSocket::SocketError socketError)
 {
-    qDebug() << "remote close code:" << _con->get_remote_close_code();
-    qDebug() << "local close code:" << _con->get_local_close_code();
+    if (_con)
+    {
+        qDebug() << "remote close code:" << _con->get_remote_close_code();
+        qDebug() << "local close code:" << _con->get_local_close_code();
+    }
 
     qDebug() << socketError;
     ConnectionState expState = ConnectionState::OPENED;
