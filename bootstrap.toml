@@ -1,2 +1,4 @@
+xb-minimum-required = "0.14"
+
 [dependencies]
 "https://github.com/zaphoyd/websocketpp.git" = { ref = "0.8.1", no-debug = true }
